@@ -99,25 +99,4 @@ RUN rm $PHP_INI_DIR/conf.d/app.prod.ini; \
 
 COPY --link docker/php/conf.d/app.dev.ini $PHP_INI_DIR/conf.d/
 
-RUN set -eux; \
-	install-php-extensions xdebug
-
 RUN rm -f .env.local.php
-
-# Build Caddy with the Mercure and Vulcain modules
-FROM caddy:2.6-builder-alpine AS app_caddy_builder
-
-RUN xcaddy build \
-	--with github.com/dunglas/mercure \
-	--with github.com/dunglas/mercure/caddy \
-	--with github.com/dunglas/vulcain \
-	--with github.com/dunglas/vulcain/caddy
-
-# Caddy image
-FROM caddy:2.6-alpine AS app_caddy
-
-WORKDIR /srv/app
-
-COPY --from=app_caddy_builder --link /usr/bin/caddy /usr/bin/caddy
-COPY --from=app_php --link /srv/app/public public/
-COPY --link docker/caddy/Caddyfile /etc/caddy/Caddyfile
